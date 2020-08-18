@@ -48,8 +48,8 @@ export function createDecorationsForStackFrame(stackFrame: IStackFrame, topStack
 
 	// compute how to decorate the editor. Different decorations are used if this is a top stack frame, focused stack frame,
 	// an exception or a stack frame that did not change the line number (we only decorate the columns, not the whole line).
-	const callStack = stackFrame.thread.getCallStack();
-	if (callStack && callStack.length && stackFrame === callStack[0]) {
+	const topStackFrame = stackFrame.thread.getTopStackFrame();
+	if (stackFrame.getId() === topStackFrame?.getId()) {
 		result.push({
 			options: TOP_STACK_FRAME_MARGIN,
 			range
@@ -145,5 +145,5 @@ registerThemingParticipant((theme, collector) => {
 	}
 });
 
-const topStackFrameColor = registerColor('editor.stackFrameHighlightBackground', { dark: '#ffff0033', light: '#ffff6673', hc: '#fff600' }, localize('topStackFrameLineHighlight', 'Background color for the highlight of line at the top stack frame position.'));
-const focusedStackFrameColor = registerColor('editor.focusedStackFrameHighlightBackground', { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' }, localize('focusedStackFrameLineHighlight', 'Background color for the highlight of line at focused stack frame position.'));
+const topStackFrameColor = registerColor('editor.stackFrameHighlightBackground', { dark: '#ffff0033', light: '#ffff6673', hc: '#ffff0033' }, localize('topStackFrameLineHighlight', 'Background color for the highlight of line at the top stack frame position.'));
+const focusedStackFrameColor = registerColor('editor.focusedStackFrameHighlightBackground', { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#7abd7a4d' }, localize('focusedStackFrameLineHighlight', 'Background color for the highlight of line at focused stack frame position.'));

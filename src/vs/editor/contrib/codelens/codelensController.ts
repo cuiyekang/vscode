@@ -67,7 +67,7 @@ export class CodeLensContribution implements IEditorContribution {
 		}));
 		this._onModelChange();
 
-		this._styleClassName = hash(this._editor.getId()).toString(16);
+		this._styleClassName = '_' + hash(this._editor.getId()).toString(16);
 		this._styleElement = dom.createStyleSheet(
 			dom.isInShadowDOM(this._editor.getContainerDomNode())
 				? this._editor.getContainerDomNode()
@@ -95,7 +95,7 @@ export class CodeLensContribution implements IEditorContribution {
 		.monaco-editor .codelens-decoration.${this._styleClassName} { height: ${height}px; line-height: ${lineHeight}px; font-size: ${fontSize}px; padding-right: ${Math.round(fontInfo.fontSize * 0.45)}px;}
 		.monaco-editor .codelens-decoration.${this._styleClassName} > a > .codicon { line-height: ${lineHeight}px; font-size: ${fontSize}px; }
 		`;
-		this._styleElement.innerHTML = newStyle;
+		this._styleElement.textContent = newStyle;
 	}
 
 	private _localDispose(): void {
@@ -470,5 +470,3 @@ registerEditorAction(class ShowLensesInCurrentLine extends EditorAction {
 		}
 	}
 });
-
-

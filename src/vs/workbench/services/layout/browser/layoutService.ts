@@ -33,9 +33,8 @@ export function positionToString(position: Position): string {
 		case Position.LEFT: return 'left';
 		case Position.RIGHT: return 'right';
 		case Position.BOTTOM: return 'bottom';
+		default: return 'bottom';
 	}
-
-	return 'bottom';
 }
 
 const positionsByString: { [key: string]: Position } = {
@@ -50,7 +49,7 @@ export function positionFromString(str: string): Position {
 
 export interface IWorkbenchLayoutService extends ILayoutService {
 
-	_serviceBrand: undefined;
+	readonly _serviceBrand: undefined;
 
 	/**
 	 * Emits when the zen mode is enabled or disabled.
@@ -92,6 +91,11 @@ export interface IWorkbenchLayoutService extends ILayoutService {
 	 * Returns whether the given part has the keyboard focus or not.
 	 */
 	hasFocus(part: Parts): boolean;
+
+	/**
+	 * Focuses the part. If the part is not visible this is a noop.
+	 */
+	focusPart(part: Parts): void;
 
 	/**
 	 * Returns the parts HTML element, if there is one.
@@ -219,4 +223,9 @@ export interface IWorkbenchLayoutService extends ILayoutService {
 	 * Returns the next visible view part in a given direction
 	 */
 	getVisibleNeighborPart(part: Parts, direction: Direction): Parts | undefined;
+
+	/**
+	 * True if a default layout with default editors was applied at startup
+	 */
+	readonly openedDefaultEditors: boolean;
 }

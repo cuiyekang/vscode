@@ -885,6 +885,12 @@ export class Diagnostic {
 	tags?: DiagnosticTag[];
 
 	constructor(range: Range, message: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error) {
+		if (!Range.isRange(range)) {
+			throw new TypeError('range must be set');
+		}
+		if (!message) {
+			throw new TypeError('message must be set');
+		}
 		this.range = range;
 		this.message = message;
 		this.severity = severity;
@@ -1252,7 +1258,7 @@ export class MarkdownString {
 		// escape markdown syntax tokens: http://daringfireball.net/projects/markdown/syntax#backslash
 		this.value += (this.supportThemeIcons ? escapeCodicons(value) : value)
 			.replace(/[\\`*_{}[\]()#+\-.!]/g, '\\$&')
-			.replace('\n', '\n\n');
+			.replace(/\n/, '\n\n');
 
 		return this;
 	}
@@ -1270,6 +1276,13 @@ export class MarkdownString {
 		this.value += code;
 		this.value += '\n```\n';
 		return this;
+	}
+
+	static isMarkdownString(thing: any): thing is vscode.MarkdownString {
+		if (thing instanceof MarkdownString) {
+			return true;
+		}
+		return thing && thing.appendCodeblock && thing.appendMarkdown && thing.appendText && (thing.value !== undefined);
 	}
 }
 
@@ -1291,6 +1304,7 @@ export class SignatureInformation {
 	label: string;
 	documentation?: string | MarkdownString;
 	parameters: ParameterInformation[];
+	activeParameter?: number;
 
 	constructor(label: string, documentation?: string | MarkdownString) {
 		this.label = label;
@@ -2100,7 +2114,7 @@ export class TreeItem {
 	iconPath?: string | URI | { light: string | URI; dark: string | URI; };
 	command?: vscode.Command;
 	contextValue?: string;
-	tooltip?: string;
+	tooltip?: string | vscode.MarkdownString;
 
 	constructor(label: string | vscode.TreeItemLabel, collapsibleState?: vscode.TreeItemCollapsibleState);
 	constructor(resourceUri: URI, collapsibleState?: vscode.TreeItemCollapsibleState);
@@ -2651,6 +2665,17 @@ export enum DebugConsoleMode {
 	MergeWithParent = 1
 }
 
+export enum DebugConfigurationProviderTriggerKind {
+	/**
+	 *	`DebugConfigurationProvider.provideDebugConfigurations` is called to provide the initial debug configurations for a newly created launch.json.
+	 */
+	Initial = 1,
+	/**
+	 * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide dynamically generated debug configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+	 */
+	Dynamic = 2
+}
+
 //#endregion
 
 @es5ClassCompat
@@ -2713,6 +2738,18 @@ export enum CellOutputKind {
 	Rich = 3
 }
 
+export enum NotebookCellRunState {
+	Running = 1,
+	Idle = 2,
+	Success = 3,
+	Error = 4
+}
+
+export enum NotebookRunState {
+	Running = 1,
+	Idle = 2
+}
+
 //#endregion
 
 //#region Timeline
@@ -2723,3 +2760,45 @@ export class TimelineItem implements vscode.TimelineItem {
 }
 
 //#endregion Timeline
+
+//#region ExtensionContext
+
+export enum ExtensionMode {
+	/**
+	 * The extension is installed normally (for example, from the marketplace
+	 * or VSIX) in VS Code.
+	 */
+	Production = 1,
+
+	/**
+	 * The extension is running from an `--extensionDevelopmentPath` provided
+	 * when launching VS Code.
+	 */
+	Development = 2,
+
+	/**
+	 * The extension is running from an `--extensionDevelopmentPath` and
+	 * the extension host is running unit tests.
+	 */
+	Test = 3,
+}
+
+export enum ExtensionRuntime {
+	/**
+	 * The extension is running in a NodeJS extension host. Runtime access to NodeJS APIs is available.
+	 */
+	Node = 1,
+	/**
+	 * The extension is running in a Webworker extension host. Runtime access is limited to Webworker APIs.
+	 */
+	Webworker = 2
+}
+
+//#endregion ExtensionContext
+
+export enum StandardTokenType {
+	Other = 0,
+	Comment = 1,
+	String = 2,
+	RegEx = 4
+}

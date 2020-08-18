@@ -6,7 +6,6 @@
 import { ILogService } from 'vs/platform/log/common/log';
 import { IURLService } from 'vs/platform/url/common/url';
 import { IProcessEnvironment, isMacintosh } from 'vs/base/common/platform';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { ParsedArgs } from 'vs/platform/environment/node/argv';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IWindowSettings } from 'vs/platform/windows/common/windows';
@@ -52,39 +51,41 @@ function parseOpenUrl(args: ParsedArgs): URI[] {
 }
 
 export interface ILaunchMainService {
-	_serviceBrand: undefined;
+	readonly _serviceBrand: undefined;
 	start(args: ParsedArgs, userEnv: IProcessEnvironment): Promise<void>;
 	getMainProcessId(): Promise<number>;
 	getMainProcessInfo(): Promise<IMainProcessInfo>;
-	getLogsPath(): Promise<string>;
 	getRemoteDiagnostics(options: IRemoteDiagnosticOptions): Promise<(IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]>;
 }
 
 export class LaunchMainService implements ILaunchMainService {
 
-	_serviceBrand: undefined;
+	declare readonly _serviceBrand: undefined;
 
 	constructor(
 		@ILogService private readonly logService: ILogService,
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
 		@IURLService private readonly urlService: IURLService,
 		@IWorkspacesMainService private readonly workspacesMainService: IWorkspacesMainService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@IConfigurationService private readonly configurationService: IConfigurationService
 	) { }
 
-	start(args: ParsedArgs, userEnv: IProcessEnvironment): Promise<void> {
+	async start(args: ParsedArgs, userEnv: IProcessEnvironment): Promise<void> {
 		this.logService.trace('Received data from other instance: ', args, userEnv);
 
-		const urlsToOpen = parseOpenUrl(args);
+		// Since we now start to open a window, make sure the app has focus.
+		// Focussing a window will not ensure that the application itself
+		// has focus, so we use the `steal: true` hint to force focus.
+		app.focus({ steal: true });
 
 		// Check early for open-url which is handled in URL service
+		const urlsToOpen = parseOpenUrl(args);
 		if (urlsToOpen.length) {
-			let whenWindowReady: Promise<any> = Promise.resolve<any>(null);
+			let whenWindowReady: Promise<unknown> = Promise.resolve();
 
 			// Create a window if there is none
 			if (this.windowsMainService.getWindowCount() === 0) {
-				const window = this.windowsMainService.openEmptyWindow(OpenContext.DESKTOP)[0];
+				const window = this.windowsMainService.openEmptyWindow({ context: OpenContext.DESKTOP })[0];
 				whenWindowReady = window.ready();
 			}
 
@@ -94,12 +95,12 @@ export class LaunchMainService implements ILaunchMainService {
 					this.urlService.open(url);
 				}
 			});
-
-			return Promise.resolve(undefined);
 		}
 
 		// Otherwise handle in windows service
-		return this.startOpenWindow(args, userEnv);
+		else {
+			return this.startOpenWindow(args, userEnv);
+		}
 	}
 
 	private startOpenWindow(args: ParsedArgs, userEnv: IProcessEnvironment): Promise<void> {
@@ -224,12 +225,6 @@ export class LaunchMainService implements ILaunchMainService {
 			screenReader: !!app.accessibilitySupportEnabled,
 			gpuFeatureStatus: app.getGPUFeatureStatus()
 		});
-	}
-
-	getLogsPath(): Promise<string> {
-		this.logService.trace('Received request for logs path from other instance.');
-
-		return Promise.resolve(this.environmentService.logsPath);
 	}
 
 	getRemoteDiagnostics(options: IRemoteDiagnosticOptions): Promise<(IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]> {
